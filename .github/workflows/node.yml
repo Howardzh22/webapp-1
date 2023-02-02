@@ -1,0 +1,17 @@
+
+name: My GITHUB Workflow
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+    - run : npm ci
+    - run : npm test
