@@ -1,6 +1,6 @@
 
 const request = require("supertest");
- const { server} = require("../app.js")
+ const { server} = require("../index.js")
 //import {app} from '../app.js'
 
   test("It should response the GET method", async () => {

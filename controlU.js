@@ -14,7 +14,13 @@ export async function createUser(username,account_password,First_Name,Last_Name)
         First_Name:First_Name,
         Last_Name:Last_Name
     })
-    return u
+    const u1 = await user.findAll({
+        attributes:{exclude: ['account_password']},
+        where:{
+            username:username
+        }
+    })
+    return u1
 }
 
 export async function getUserByName(name){
@@ -28,6 +34,7 @@ export async function getUserByName(name){
 
 export async function getUser(id){
     const u = await user.findAll({
+        attributes:{exclude: ['account_password']},
         where:{
             id:id
         }
@@ -48,10 +55,5 @@ export async function updateUser(id,account_password,First_Name,Last_Name,userna
     {
         where:{username:username}
     })
-    const u1 = await user.findAll({
-        where:{
-            id:id
-        }
-    })
-    return u1
+    return await getUser(id)
 }

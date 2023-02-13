@@ -173,7 +173,7 @@ app.delete("/v1/product/:id", authenticate, async(req,res) =>{
         var username = credentials[0]
     const gid = await getUserByName(username)
 
-    if (!exist[0]) res.status(204).json("No product")
+    if (!exist[0]) res.status(404).json("No product")
     else if (gid[0].dataValues.id != exist[0].dataValues.owner_user_id)  res.status(403).json("Forbidden")
     else 
     {
