@@ -112,7 +112,8 @@ app.post("/v1/product",authenticate, async(req,res) =>{
     .split(':')
     var username = credentials[0]
     const gid = await getUserByName(username)
-    if(quantity<=0 || quantity>100 ) res.status(400).json("bad request with wrong quantity")
+    if(!name || !description || !sku || !manufacturer || !quantity) res.status(400).json("missing required fields")
+    else if(quantity<=0 || quantity>100 ) res.status(400).json("bad request with wrong quantity")
     else
     {
         const product = await addProduct(name,description,sku,manufacturer,quantity,gid[0].dataValues.id)
@@ -130,8 +131,8 @@ app.put("/v1/product/:id",authenticate, async(req,res) =>{
         .split(':')
         var username = credentials[0]
     const gid = await getUserByName(username)
-
-    if(!exist[0]) res.status(400).json("No product in this user")
+    if(!name || !description || !sku || !manufacturer || !quantity) res.status(400).json("missing required fields")
+    else if(!exist[0]) res.status(400).json("No product in this user")
     else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
     else if(quantity<=0 || quantity>100) res.status(400).json("bad request with wrong quantity")
     else 
