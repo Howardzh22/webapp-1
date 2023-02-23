@@ -187,7 +187,7 @@ app.delete("/v1/product/:id", authenticate, async(req,res) =>{
 
 
 
-//Health endpoint
+//Health 
 app.get("/healthz",async(req,res) =>{
     res.status(200).json("server responds with 200 OK if it is healhty.")
 })
