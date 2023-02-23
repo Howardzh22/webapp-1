@@ -27,9 +27,7 @@ jobs:
       run: cd .. && zip -r webapp.zip webapp && cd webapp
 
     - name: Initialize Packer Template
-      uses: hashicorp/packer-github-actions@master
-      with:
-        command: init
+      run: cd packer && packer init .
 
     - name: build AMI
       run: packer build ami.pkr.hcl
