@@ -28,6 +28,7 @@ jobs:
 
     - name: Initialize Packer Template
       run: cd packer && packer init .
+    - run: ls 
 
     - name: build AMI
       run: packer build ami.pkr.hcl
