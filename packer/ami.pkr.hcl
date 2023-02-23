@@ -17,7 +17,7 @@ variable "ssh_username" {
 # https://www.packer.io/plugins/builders/amazon/ebs
 source "amazon-ebs" "my-ami" {
   region     = "${var.aws_region}"
-  
+    ami_users = [525527600142]
   source_ami = "${var.source_ami}"
   ssh_username = "${var.ssh_username}"
   instance_type = "t2.micro"
