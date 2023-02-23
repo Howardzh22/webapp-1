@@ -1,0 +1,38 @@
+name: Packer Workflow
+
+on:
+  pull_request:
+    types:
+      - closed
+
+
+
+jobs:
+   if_merged:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+      
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: zip webapp
+      uses: montudor/action-zip@v1
+      with:
+        args: zip -qq -r webapp.zip web
+
+    - name: Initialize Packer Template
+      uses: hashicorp/packer-github-actions@master
+      with:
+        command: init
+
+    - name: build AMI
+      run: packer build ami.pkr.hcl
+
