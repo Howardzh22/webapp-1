@@ -24,9 +24,7 @@ jobs:
         aws-region: us-east-1
 
     - name: zip webapp
-      uses: montudor/action-zip@v1
-      with:
-        args: zip -qq -r webapp.zip webapp
+      run: zip -r <webapp> <webapp>
 
     - name: Initialize Packer Template
       uses: hashicorp/packer-github-actions@master
