@@ -24,7 +24,7 @@ jobs:
         aws-region: us-east-1
 
     - name: zip webapp
-      run: zip -r webapp.zip webapp
+      run: cd.. && zip -r webapp.zip webapp && cd webapp
 
     - name: Initialize Packer Template
       uses: hashicorp/packer-github-actions@master
