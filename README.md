@@ -16,3 +16,6 @@
 # use packer to create ami
  ✗ packer init .
  ✗ packer build ami.pkr.hcl
+
+#demo time
+feb 27 2023
