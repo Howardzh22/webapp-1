@@ -37,4 +37,3 @@ jobs:
 
     - name: validate packer
       run: packer validate -var-file="./variables/pkr.hcl" ./webapp.pkr.hcl
-
