@@ -26,9 +26,15 @@ jobs:
     - name: zip webapp
       run: cd .. && zip -r webapp.zip webapp && cd webapp
 
+    - name : setup env
+      run : echo "DIALECT=mysql" >> ./.env
+
     - name: Initialize Packer Template
       run: cd packer && packer init .
 
     - name: build AMI
       run: cd packer && packer build ami.pkr.hcl
+
+    - name: validate packer
+      run: packer validate -var-file="./variables/pkr.hcl" ./webapp.pkr.hcl
 
