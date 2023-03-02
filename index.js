@@ -3,15 +3,44 @@ import bcrypt from'bcrypt'
 import bodyParser from 'body-parser'
 
 import {sequelize} from './util/autodb.js'
-
+import crypto from 'crypto'
 
 import {  createUser, getUserByName, getUser, updateUser } from './controlU.js'
 import { addProduct, getProduct, updateProduct, deleteProduct } from './controlP.js'
+import { uploadImage, deleteImage, getImage } from './controlI.js'
 
 
 
 const app = express();
 
+import multer from 'multer'
+
+const storage = multer.memoryStorage()
+const upload = multer({ storage: storage })
+
+
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3"
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+import dotenv from 'dotenv'
+dotenv.config()
+
+const randomImageName = () => crypto.randomBytes(8).toString('hex')
+
+const bucketName = process.env.BUCKET_NAME
+const region = process.env.BUCKET_REGION
+const accessKey = process.env.ACCESS_KEY
+const secretAccessKey = process.env.SECRET_ACCESS_KEY
+
+const s3 = new S3Client({
+    region: region,
+    credentials: {
+    accessKeyId:accessKey,
+    secretAccessKey: secretAccessKey,
+  }
+})
+
+ 
 sequelize.sync().then((result) => {
     //console.log(result[0]);
 }).catch((error) => {
@@ -213,7 +242,7 @@ app.post("/v1/user", async(req,res) => {
 })
 
 //Get Product Information
-app.get("/v1/product/id", async(req,res) =>{
+app.get("/v1/product/:id", async(req,res) =>{
     const id = req.params.id
     const product = await getProduct(id)
     res.status(200).json(product)
@@ -222,3 +251,78 @@ app.get("/v1/product/id", async(req,res) =>{
 export const server = app.listen(8080,() => {
     console.log('Server is running on port 8080')
 })
+
+app.get('/v1/product/:id/image/:image_id',authenticate , async (req, res) => {
+    const imageid = req.params.image_id
+    const id = req.params.id
+    const exist = await getProduct(id)
+    var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
+        .toString()
+        .split(':')
+        var username = credentials[0]
+    const gid = await getUserByName(username)
+    if(!exist[0]) res.status(400).json("bad request")
+    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
+    else
+    {
+    const image = await getImage(imageid)
+    res.status(200).json(image)
+    }
+})
+
+
+app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (req, res) => {
+    const imageName = randomImageName()
+    const id = req.params.id
+    const params = {
+      Bucket: bucketName,
+      Body: req.file.buffer,
+      Key: `${id}/${imageName}`,
+      ContentType: req.file.mimetype
+    }
+    const commandp = new PutObjectCommand(params)
+    await s3.send(commandp)
+
+    const commandg = new GetObjectCommand(params);
+    const url = await getSignedUrl(s3, commandg, { expiresIn: 60 });
+    const exist = await getProduct(id)
+      var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
+          .toString()
+          .split(':')
+          var username = credentials[0]
+    const gid = await getUserByName(username)
+    if(!exist[0]) res.status(400).json("bad request")
+    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
+    else
+    {
+      const post = await uploadImage(id,imageName,params.Key)
+      res.status(200).json(post)}
+  })
+  
+  app.delete('/v1/product/:id/image/:image_id',authenticate, async (req,res) => {
+    const id = req.params.id
+    const imageid = req.params.image_id
+    const image = await getImage(imageid)
+
+    const exist = await getProduct(id)
+    var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
+        .toString()
+        .split(':')
+        var username = credentials[0]
+    const gid = await getUserByName(username)
+    if(!exist[0] || !image[0]) res.status(400).json("bad request")
+    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
+    else 
+    {
+        const imagename = image[0].dataValues.file_name
+        const params = {
+            Bucket: bucketName,
+            Key: imagename
+          }
+          const command = new DeleteObjectCommand(params)
+          await s3.send(command)
+
+        await deleteImage(imageid)
+        res.status(201).json("delete successfully!")
+    }
+  })
