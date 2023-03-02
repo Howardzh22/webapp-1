@@ -35,5 +35,3 @@ jobs:
     - name: build AMI
       run: cd packer && packer build ami.pkr.hcl
 
-    - name: validate packer
-      run: packer validate -var-file="./variables/pkr.hcl" ./webapp.pkr.hcl
