@@ -27,4 +27,4 @@ jobs:
     - run : npm test
 
     - name: validate packer
-      run: packer validate -var-file="./variables/pkr.hcl" ./webapp.pkr.hcl
+      run: packer validate -var-file="./variables/pkr.hcl" ./ami.pkr.hcl
