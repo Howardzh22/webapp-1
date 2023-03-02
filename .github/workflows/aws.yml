@@ -27,7 +27,7 @@ jobs:
       run: cd .. && zip -r webapp.zip webapp && cd webapp
 
     - name : setup env
-      run : echo "DIALECT=mysql" >> ./.env
+      run : echo "DIALECT=mysql4.0.0" >> ./.env
 
     - name: Initialize Packer Template
       run: cd packer && packer init .
