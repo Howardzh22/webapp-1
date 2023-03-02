@@ -13,5 +13,18 @@ jobs:
     - uses: actions/setup-node@v3
       with:
         node-version: 16
+
+    - name: zip webapp
+      run: cd .. && zip -r webapp.zip webapp && cd webapp
+
+    - name : setup env
+      run : echo "DIALECT=mysql4.0.0" >> ./.env
+
+    - name: Initialize Packer Template
+      run: cd packer && packer init .
+
     - run : npm i
     - run : npm test
+
+    - name: validate packer
+      run: packer validate -var-file="./variables/pkr.hcl" ./webapp.pkr.hcl
