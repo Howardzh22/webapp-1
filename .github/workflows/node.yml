@@ -27,4 +27,4 @@ jobs:
     - run : npm test
 
     - name: validate packer
-      run: packer validate ./packer/ami.pkr.hcl
+      run: cd packer && packer validate ./ami.pkr.hcl
