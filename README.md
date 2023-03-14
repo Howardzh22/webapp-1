@@ -17,3 +17,4 @@
  ✗ packer init .
  ✗ packer build ami.pkr.hcl
 
+test
