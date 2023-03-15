@@ -34,6 +34,7 @@ const secretAccessKey = process.env.SECRET_ACCESS_KEY
 
 const s3 = new S3Client({
     region: region
+    //delete credentials  
 })
 
  
