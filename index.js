@@ -334,10 +334,10 @@ app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (re
     else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
     else 
     {
-        const imagename = image[0].dataValues.file_name
+        const imageName = image[0].dataValues.file_name
         const params = {
             Bucket: bucketName,
-            Key: imagename
+            Key: `${id}/${imageName}`
           }
           const command = new DeleteObjectCommand(params)
           await s3.send(command)
