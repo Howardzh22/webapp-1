@@ -28,5 +28,15 @@ export async function getImage(imageId) {
     return i
 }
 
+export async function getImageByProduct(Id) {
+    const i = await image.findAll({
+        where:{
+            product_id : Id
+        }
+    })
+
+    return i
+}
+
 
   

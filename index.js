@@ -7,7 +7,7 @@ import crypto from 'crypto'
 
 import {  createUser, getUserByName, getUser, updateUser } from './controlU.js'
 import { addProduct, getProduct, updateProduct, deleteProduct } from './controlP.js'
-import { uploadImage, deleteImage, getImage } from './controlI.js'
+import { uploadImage, deleteImage, getImage, getImageByProduct } from './controlI.js'
 
 
 
@@ -267,33 +267,56 @@ app.get('/v1/product/:id/image/:image_id',authenticate , async (req, res) => {
     }
 })
 
-
-app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (req, res) => {
-    const imageName = randomImageName()
+app.get('/v1/product/:id/image',authenticate , async (req, res) => {
     const id = req.params.id
-    const params = {
-      Bucket: bucketName,
-      Body: req.file.buffer,
-      Key: `${id}/${imageName}`,
-      ContentType: req.file.mimetype
-    }
-    const commandp = new PutObjectCommand(params)
-    await s3.send(commandp)
-
-    const commandg = new GetObjectCommand(params);
-    const url = await getSignedUrl(s3, commandg, { expiresIn: 60 });
     const exist = await getProduct(id)
-      var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
-          .toString()
-          .split(':')
-          var username = credentials[0]
+    var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
+        .toString()
+        .split(':')
+        var username = credentials[0]
     const gid = await getUserByName(username)
     if(!exist[0]) res.status(400).json("bad request")
     else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
     else
     {
-      const post = await uploadImage(id,imageName,params.Key)
-      res.status(200).json(post)}
+    const image = await getImageByProduct(id)
+    res.status(200).json(image)
+    }
+})
+
+
+app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (req, res) => {
+    const imageName = randomImageName()
+    const id = req.params.id
+    const filetype =/jpeg|jpg|png/
+    const exname = req.file.originalname
+    if(filetype.test(exname.toLowerCase()))
+    {
+        const params = {
+        Bucket: bucketName,
+        Body: req.file.buffer,
+        Key: `${id}/${imageName}`,
+        ContentType: req.file.mimetype
+        }
+        const commandp = new PutObjectCommand(params)
+        await s3.send(commandp)
+
+        const commandg = new GetObjectCommand(params);
+        const url = await getSignedUrl(s3, commandg, { expiresIn: 60 });
+        const exist = await getProduct(id)
+        var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
+            .toString()
+            .split(':')
+            var username = credentials[0]
+        const gid = await getUserByName(username)
+        if(!exist[0]) res.status(400).json("bad request")
+        else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
+        else
+        {
+            const post = await uploadImage(id,imageName,params.Key)
+            res.status(200).json(post)
+        }
+    }
   })
   
   app.delete('/v1/product/:id/image/:image_id',authenticate, async (req,res) => {
