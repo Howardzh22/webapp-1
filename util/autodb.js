@@ -1,4 +1,5 @@
 import { Sequelize } from "sequelize"
+import {logger} from '../logger.js'
 import dotenv from 'dotenv'
 dotenv.config()
 
@@ -12,6 +13,7 @@ const dialect = process.env.DIALECT
 export const sequelize = new Sequelize(databaseName,username,password,{
     dialect: dialect,
     host: host,
+    logging: (message) => {logger.info(message)}
 });
 
 

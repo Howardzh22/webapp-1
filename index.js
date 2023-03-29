@@ -8,8 +8,11 @@ import crypto from 'crypto'
 import {  createUser, getUserByName, getUser, updateUser } from './controlU.js'
 import { addProduct, getProduct, updateProduct, deleteProduct } from './controlP.js'
 import { uploadImage, deleteImage, getImage, getImageByProduct } from './controlI.js'
+import { logger } from './logger.js'
+import StatsD from 'node-statsd'
 
-
+const host = process.env.DATABASE_HOST
+const statsd = new StatsD({ port: 8125, globalize: 'true'});
 
 const app = express();
 
@@ -60,6 +63,7 @@ const authenticate = async (req,res,next)=>{
         res.status(403).set('WWW-Authenticate','Basic')
         next(err)
         */
+        logger.error("Forbidden")
         return res.status(403).json('Forbidden')
     }else {
         var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
@@ -78,13 +82,15 @@ const authenticate = async (req,res,next)=>{
            res.status(401).set('WWW-Authenticate','Basic')
             next(err) 
             */
-            
+            logger.error("Unauthorized")
             return res.status(401).json('Unauthorized')
         
         }
         else
-        {res.status(200)
-        next()}
+        {
+            res.status(200)
+            next()
+        }
     }
 }
 
@@ -96,11 +102,17 @@ app.get("/v1/user/:id",authenticate, async (req,res) => {
     .split(':')
     var username = credentials[0]
     const gid = await getUserByName(username)
-    if(id != gid[0].dataValues.id) res.status(403).json("forbidden")
+    if(id != gid[0].dataValues.id) 
+    {
+        res.status(403).json("Forbidden")
+        logger.error("Forbidden")
+    }
     else
     {
-    const user = await getUser(id)
-    res.status(200).json(user)
+        const user = await getUser(id)
+        res.status(200).json(user)
+        logger.info("get user")
+        statsd.increment('count')
     }
 })
 
@@ -114,16 +126,23 @@ app.put("/v1/user/:id",authenticate, async (req,res) => {
     .split(':')
     var name = credentials[0]
     const gid = await getUserByName(name)
-    if(id != gid[0].dataValues.id) res.status(403).json("forbidden")
+    if(id != gid[0].dataValues.id) 
+    {
+        res.status(403).json("Forbidden")
+        logger.error("Forbidden")
+    }
     else
    { 
         const account = await updateUser(id,account_password,First_Name,Last_Name,username);
         if(!account)
         {
-            res.status(204).json("No Content")
+            res.status(404).json("No Content")
+            logger.info("No Content")
         }
         else{
             res.status(200).json(account)
+            logger.info("update user")
+            statsd.increment('count')
         }
     }
 
@@ -138,12 +157,22 @@ app.post("/v1/product",authenticate, async(req,res) =>{
     .split(':')
     var username = credentials[0]
     const gid = await getUserByName(username)
-    if(!name || !description || !sku || !manufacturer || !quantity) res.status(400).json("missing required fields")
-    else if(quantity<=0 || quantity>100 ) res.status(400).json("bad request with wrong quantity")
+    if(!name || !description || !sku || !manufacturer || !quantity) 
+    {
+        res.status(400).json("missing required fields")
+        logger.error("missing required fields")
+    }
+    else if(quantity<=0 || quantity>100 ) 
+    {
+        res.status(400).json("bad request with wrong quantity")
+        logger.error("bad request with wrong quantity")
+    }
     else
     {
         const product = await addProduct(name,description,sku,manufacturer,quantity,gid[0].dataValues.id)
         res.status(201).json(product)
+        logger.info("add a product")
+        statsd.increment('count')
     }
 })
 
@@ -157,14 +186,28 @@ app.put("/v1/product/:id",authenticate, async(req,res) =>{
         .split(':')
         var username = credentials[0]
     const gid = await getUserByName(username)
-    if(!name || !description || !sku || !manufacturer || !quantity) res.status(400).json("missing required fields")
-    else if(!exist[0]) res.status(400).json("No product in this user")
-    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
+    if(!name || !description || !sku || !manufacturer || !quantity) 
+    {
+        res.status(400).json("missing required fields")
+        logger.error("missing required fields")
+    }
+    else if(!exist[0]) 
+    {
+        res.status(400).json("No product in this user")
+        logger.error("No product in this user")
+    }
+    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) 
+    {
+        res.status(403).json("Forbidden")
+        logger.error("Forbidden")
+    }
     else if(quantity<=0 || quantity>100) res.status(400).json("bad request with wrong quantity")
     else 
     {
         const product = await updateProduct(id,name,description,sku,manufacturer,quantity)
         res.status(201).json(product)
+        logger.info("update a product")
+        statsd.increment('count')
     }
 })
 
@@ -181,12 +224,22 @@ app.patch("/v1/product/:id",authenticate, async(req,res) =>{
     const gid = await getUserByName(username)
 
     if(!exist[0]) res.status(400).json("No product in this user")
-    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
-    else if(quantity<=0 || quantity>100) res.status(400).json("bad request with wrong quantity")
+    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) 
+    {
+        res.status(403).json("Forbidden")
+        logger.error("Forbidden")
+    }
+    else if(quantity<=0 || quantity>100) 
+    {
+        res.status(400).json("bad request with wrong quantity")
+        logger.error("bad request with wrong quantity")
+    }
     else 
     {
         const product = await updateProduct(id,name,description,sku,manufacturer,quantity)
         res.status(201).json(product)
+        logger.info("update product")
+        statsd.increment('count')
     }
 })
 
@@ -200,12 +253,22 @@ app.delete("/v1/product/:id", authenticate, async(req,res) =>{
         var username = credentials[0]
     const gid = await getUserByName(username)
 
-    if (!exist[0]) res.status(404).json("No product")
-    else if (gid[0].dataValues.id != exist[0].dataValues.owner_user_id)  res.status(403).json("Forbidden")
+    if (!exist[0]) 
+    {
+        res.status(404).json("No product")
+        logger.error("No product")
+    }
+    else if (gid[0].dataValues.id != exist[0].dataValues.owner_user_id) 
+    {
+        res.status(403).json("Forbidden")
+        logger.error("Forbidden")
+    }
     else 
     {
         deleteProduct(id)
         res.status(201).json("delete successfully")
+        logger.info("delete successfully")
+        statsd.increment('count')
     }
 } )
 
@@ -216,6 +279,8 @@ app.delete("/v1/product/:id", authenticate, async(req,res) =>{
 //Health 
 app.get("/healthz",async(req,res) =>{
     res.status(200).json("server responds with 200 OK if it is healhty.")
+    logger.info("healthy")
+    statsd.increment('count')
 })
 
 //create  user account
@@ -230,11 +295,18 @@ app.post("/v1/user", async(req,res) => {
     {
         const u = await createUser(username,account_password,First_Name,Last_Name)
         res.status(201).json(u)
+        logger.info("create a new user")
+        statsd.increment('count')
     }
-    else if(!valid) res.json("bad username")
+    else if(!valid) 
+    {
+        res.status(400).json("bad username")
+        logger.error("bad username")
+    }
     else
     {
        res.status(400).json('bad request')
+       logger.error("bad request")
     }
 })
 
@@ -243,12 +315,15 @@ app.get("/v1/product/:id", async(req,res) =>{
     const id = req.params.id
     const product = await getProduct(id)
     res.status(200).json(product)
+    logger.info("get a product")
+    statsd.increment('count')
 })
 
 export const server = app.listen(8080,() => {
     console.log('Server is running on port 8080')
 })
 
+//Get Image Information
 app.get('/v1/product/:id/image/:image_id',authenticate , async (req, res) => {
     const imageid = req.params.image_id
     const id = req.params.id
@@ -258,15 +333,26 @@ app.get('/v1/product/:id/image/:image_id',authenticate , async (req, res) => {
         .split(':')
         var username = credentials[0]
     const gid = await getUserByName(username)
-    if(!exist[0]) res.status(400).json("bad request")
-    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
+    if(!exist[0]) 
+    {
+        res.status(400).json("bad request")
+        logger.error("bad request")
+    }
+    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) 
+    {
+        res.status(403).json("Forbidden")
+        logger.error("Forbidden")
+    }
     else
     {
-    const image = await getImage(imageid)
-    res.status(200).json(image)
+        const image = await getImage(imageid)
+        res.status(200).json(image)
+        logger.info("get a image!")
+        statsd.increment('count')
     }
 })
 
+//Get All Image Information
 app.get('/v1/product/:id/image',authenticate , async (req, res) => {
     const id = req.params.id
     const exist = await getProduct(id)
@@ -275,16 +361,26 @@ app.get('/v1/product/:id/image',authenticate , async (req, res) => {
         .split(':')
         var username = credentials[0]
     const gid = await getUserByName(username)
-    if(!exist[0]) res.status(400).json("bad request")
-    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
+    if(!exist[0]) 
+    {
+        res.status(400).json("bad request")
+        logger.error("bad request")
+    }
+    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) 
+    {
+        res.status(403).json("Forbidden")
+        logger.error("Forbidden")
+    }
     else
     {
-    const image = await getImageByProduct(id)
-    res.status(200).json(image)
+        const image = await getImageByProduct(id)
+        res.status(200).json(image)
+        logger.info("get all image")
+        statsd.increment('count')
     }
 })
 
-
+//Upload an Image
 app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (req, res) => {
     const imageName = randomImageName()
     const id = req.params.id
@@ -309,16 +405,32 @@ app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (re
             .split(':')
             var username = credentials[0]
         const gid = await getUserByName(username)
-        if(!exist[0]) res.status(400).json("bad request")
-        else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
+        if(!exist[0]) 
+        {
+            res.status(400).json("bad request")
+            logger.error("bad request")
+        }
+        else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) 
+        {
+            res.status(403).json("Forbidden")
+            logger.error("Forbidden")
+        }
         else
         {
             const post = await uploadImage(id,imageName,params.Key)
             res.status(200).json(post)
+            logger.info("upload image")
+            statsd.increment('count')
         }
+    }
+    else
+    {
+        res.status(400).json("bad request")
+        logger.error("bad request")
     }
   })
   
+  //Delete an Image
   app.delete('/v1/product/:id/image/:image_id',authenticate, async (req,res) => {
     const id = req.params.id
     const imageid = req.params.image_id
@@ -330,8 +442,16 @@ app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (re
         .split(':')
         var username = credentials[0]
     const gid = await getUserByName(username)
-    if(!exist[0] || !image[0]) res.status(400).json("bad request")
-    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) res.status(403).json("Forbidden")
+    if(!exist[0] || !image[0]) 
+    {
+        res.status(400).json("bad request")
+        logger.error("bad request")
+    }
+    else if(gid[0].dataValues.id != exist[0].dataValues.owner_user_id) 
+    {
+        res.status(403).json("Forbidden")
+        logger.error("Forbidden")
+    }
     else 
     {
         const imageName = image[0].dataValues.file_name
@@ -344,5 +464,7 @@ app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (re
 
         await deleteImage(imageid)
         res.status(201).json("delete successfully!")
+        logger.info("delete successfully!")
+        statsd.increment('count')
     }
   })
