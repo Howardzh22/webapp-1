@@ -112,7 +112,7 @@ app.get("/v1/user/:id",authenticate, async (req,res) => {
         const user = await getUser(id)
         res.status(200).json(user)
         logger.info("get user")
-        statsd.increment('count')
+        statsd.increment('get user')
     }
 })
 
@@ -142,7 +142,7 @@ app.put("/v1/user/:id",authenticate, async (req,res) => {
         else{
             res.status(200).json(account)
             logger.info("update user")
-            statsd.increment('count')
+            statsd.increment('update user')
         }
     }
 
@@ -172,7 +172,7 @@ app.post("/v1/product",authenticate, async(req,res) =>{
         const product = await addProduct(name,description,sku,manufacturer,quantity,gid[0].dataValues.id)
         res.status(201).json(product)
         logger.info("add a product")
-        statsd.increment('count')
+        statsd.increment('add product')
     }
 })
 
@@ -207,7 +207,7 @@ app.put("/v1/product/:id",authenticate, async(req,res) =>{
         const product = await updateProduct(id,name,description,sku,manufacturer,quantity)
         res.status(201).json(product)
         logger.info("update a product")
-        statsd.increment('count')
+        statsd.increment('update product1')
     }
 })
 
@@ -239,7 +239,7 @@ app.patch("/v1/product/:id",authenticate, async(req,res) =>{
         const product = await updateProduct(id,name,description,sku,manufacturer,quantity)
         res.status(201).json(product)
         logger.info("update product")
-        statsd.increment('count')
+        statsd.increment('update product2')
     }
 })
 
@@ -268,7 +268,7 @@ app.delete("/v1/product/:id", authenticate, async(req,res) =>{
         deleteProduct(id)
         res.status(201).json("delete successfully")
         logger.info("delete successfully")
-        statsd.increment('count')
+        statsd.increment('delete product')
     }
 } )
 
@@ -280,11 +280,12 @@ app.delete("/v1/product/:id", authenticate, async(req,res) =>{
 app.get("/healthz",async(req,res) =>{
     res.status(200).json("server responds with 200 OK if it is healhty.")
     logger.info("healthy")
-    statsd.increment('count')
+    statsd.increment('get healthy')
 })
 
 //create  user account
 app.post("/v1/user", async(req,res) => {
+    statsd.increment('create user')
     const{ username,account_password,First_Name,Last_Name } =req.body
 
     const valid = username.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi)
@@ -296,7 +297,6 @@ app.post("/v1/user", async(req,res) => {
         const u = await createUser(username,account_password,First_Name,Last_Name)
         res.status(201).json(u)
         logger.info("create a new user")
-        statsd.increment('count')
     }
     else if(!valid) 
     {
@@ -312,11 +312,11 @@ app.post("/v1/user", async(req,res) => {
 
 //Get Product Information
 app.get("/v1/product/:id", async(req,res) =>{
+    statsd.increment('get product')
     const id = req.params.id
     const product = await getProduct(id)
     res.status(200).json(product)
     logger.info("get a product")
-    statsd.increment('count')
 })
 
 export const server = app.listen(8080,() => {
@@ -325,6 +325,7 @@ export const server = app.listen(8080,() => {
 
 //Get Image Information
 app.get('/v1/product/:id/image/:image_id',authenticate , async (req, res) => {
+    statsd.increment('get image')
     const imageid = req.params.image_id
     const id = req.params.id
     const exist = await getProduct(id)
@@ -348,12 +349,12 @@ app.get('/v1/product/:id/image/:image_id',authenticate , async (req, res) => {
         const image = await getImage(imageid)
         res.status(200).json(image)
         logger.info("get a image!")
-        statsd.increment('count')
     }
 })
 
 //Get All Image Information
 app.get('/v1/product/:id/image',authenticate , async (req, res) => {
+    statsd.increment('get all image')
     const id = req.params.id
     const exist = await getProduct(id)
     var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
@@ -376,12 +377,12 @@ app.get('/v1/product/:id/image',authenticate , async (req, res) => {
         const image = await getImageByProduct(id)
         res.status(200).json(image)
         logger.info("get all image")
-        statsd.increment('count')
     }
 })
 
 //Upload an Image
 app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (req, res) => {
+    statsd.increment('upload image')
     const imageName = randomImageName()
     const id = req.params.id
     const filetype =/jpeg|jpg|png/
@@ -420,7 +421,6 @@ app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (re
             const post = await uploadImage(id,imageName,params.Key)
             res.status(200).json(post)
             logger.info("upload image")
-            statsd.increment('count')
         }
     }
     else
@@ -432,6 +432,7 @@ app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (re
   
   //Delete an Image
   app.delete('/v1/product/:id/image/:image_id',authenticate, async (req,res) => {
+    statsd.increment('delete image')
     const id = req.params.id
     const imageid = req.params.image_id
     const image = await getImage(imageid)
@@ -465,6 +466,5 @@ app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (re
         await deleteImage(imageid)
         res.status(201).json("delete successfully!")
         logger.info("delete successfully!")
-        statsd.increment('count')
     }
   })
