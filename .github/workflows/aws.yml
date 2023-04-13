@@ -58,14 +58,14 @@ jobs:
     - name: Get Template version
       run: |
        template_version=($aws ec2 describe-launch-template-versions \
-       --query 'reverse(sort_by(CreateTime))[0].VersionNumber' --output text)
+       --query 'reverse(sort_by(LaunchTemplateName,&CreateTime))[0].VersionNumber' --output text)
        echo Version_Number=$template_version >> $GITHUB_ENV
 
 
     - name: Get Template id
       run: |
        template_id=($aws ec2 describe-launch-templates \
-       --query 'reverse(sort_by(CreateTime))[0].LaunchTemplateId' --output text)
+       --query 'reverse(sort_by(LaunchTemplateName,&CreateTime))[0].LaunchTemplateId' --output text)
        echo LAUNCH_TEMPLATE_ID=$template_id >> $GITHUB_ENV
 
 
