@@ -54,19 +54,17 @@ jobs:
        --query 'reverse(sort_by(Images,&CreationDate))[0].ImageId' --output text)
        echo IMAGE_ID=$ami_id >> $GITHUB_ENV
 
-
-    - name: Get Template version
-      run: |
-       template_version=($aws ec2 describe-launch-template-versions \
-       --query 'reverse(sort_by(LaunchTemplateVersions,&CreateTime))[0].VersionNumber' --output text)
-       echo Version_Number=$template_version >> $GITHUB_ENV
-
-
     - name: Get Template id
       run: |
        template_id=($aws ec2 describe-launch-templates \
        --query 'reverse(sort_by(LaunchTemplates,&CreateTime))[0].LaunchTemplateId' --output text)
        echo LAUNCH_TEMPLATE_ID=$template_id >> $GITHUB_ENV
+
+    - name: Get Template version
+      run: |
+       template_version=($aws ec2 describe-launch-template-versions \
+       --launch-template-id $LAUNCH_TEMPLATE_ID --output text)
+       echo Version_Number=$template_version >> $GITHUB_ENV
 
 
     - name: Create a new Launch Template version with the latest AMI ID for the autoscaling group
