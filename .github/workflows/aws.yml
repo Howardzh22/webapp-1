@@ -64,7 +64,7 @@ jobs:
 
     - name: Get Template id
       run: |
-       template_id=($aws ec2 describe-launch-template \
+       template_id=($aws ec2 describe-launch-templates \
        --query 'reverse(sort_by(CreateTime))[0].LaunchTemplateId' --output text)
        echo LAUNCH_TEMPLATE_ID=$template_id >> $GITHUB_ENV
 
