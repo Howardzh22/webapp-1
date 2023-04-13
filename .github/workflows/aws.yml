@@ -75,4 +75,4 @@ jobs:
 
     - name: Refresh Instance by Autoscaling group
       run: aws ec2 start-instance-refresh
-        --auto-scaling-group-name ${{asg_name}}
+        --auto-scaling-group-name ${{env.asg_name}}
