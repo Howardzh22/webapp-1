@@ -74,7 +74,7 @@ jobs:
         aws ec2 create-launch-template-version \
         --launch-template-id $LAUNCH_TEMPLATE_ID \
         --source-version $Version_Number \
-        --launch-template-data '{\"ImageId\":\"$AMI_ID\"}'
+        --launch-template-data {\"ImageId\":\"$AMI_ID\"}
 
     - name: Get Autoscaling group name
       run: |
