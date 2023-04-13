@@ -77,7 +77,7 @@ jobs:
 
     - name: Get Autoscaling group name
       run: |
-       asg_name=$(aws --profile demo autoscaling describe-auto-scaling-groups \
+       asg_name=$(aws autoscaling describe-auto-scaling-groups \
        --filters "Name=tag-value,Values=asg_group" \
        --query "sort_by(AutoScalingGroups,&AutoScalingGroupName)[0].AutoScalingGroupName" --output text)
        echo AUTOSCALING_NAME=$asg_name >> $GITHUB_ENV
