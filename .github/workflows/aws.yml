@@ -78,6 +78,7 @@ jobs:
        --filters "Name=Name,Values=asg_group*" --output text")
        echo "::set-env name=AUTOSCALING_NAME::$asg_name"
 
+
     - name: Refresh Instance by Autoscaling group
       run: aws ec2 start-instance-refresh
         --auto-scaling-group-name ${{env.AUTOSCALING_NAME}}
