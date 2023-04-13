@@ -51,7 +51,7 @@ jobs:
       run: echo "ami_id=$aws ec2 describe-images \
        --owners ec2 \
        --filters "Name=AMI name,Values=csye6225*" \
-       --query "reverse(sort_by(Images, &CreationDate))[0].ImageId" >> $GITHUB_ENV "
+       --query "reverse(sort_by(CreationDate))[0].ImageId" >> $GITHUB_ENV "
 
     - name: Get Template version
       run: echo "template-version=$aws ec2 describe-launch-template-versions \
