@@ -32,8 +32,8 @@ jobs:
     - name: Initialize Packer Template
       run: cd packer && packer init .
 
-    - name: Build AMI
-      run: cd packer && packer build ami.pkr.hcl
+    ##- name: Build AMI
+    ##  run: cd packer && packer build ami.pkr.hcl
 
     - name: Install aws cli
       uses: unfor19/install-aws-cli-action@v1
@@ -52,33 +52,33 @@ jobs:
        --owners ec2 \
        --filters "Name=Name,Values=csye6225-*" \
        --query "reverse(sort_by(Images,&CreationDate))[0].ImageId --output text" )
-       echo "::set-env name=LATEST_AMI_ID::$ami_id"
+       echo "ami_id" >>$GITHUB_ENV
 
     - name: Get Template version
       run: template_version=($aws ec2 describe-launch-template-versions \
        --query "reverse(sort_by(CreateTime))[0].VersionNumber" --output text")
-       echo "::set-env name=SOURCE_VERSION::$template_version"
+       echo "template_version" >>$GITHUB_ENV
 
 
     - name: Get Template id
       run: template_id=($aws ec2 describe-launch-template \
        --query "reverse(sort_by(CreateTime))[0].LaunchTemplateId --output text")
-       echo "::set-env name=LAUNCH_TEMPLATE_ID::$template_id" 
+       echo "template_id" >>$GITHUB_ENV
 
 
     - name: Create a new Launch Template version with the latest AMI ID for the autoscaling group
       run: aws ec2 create-launch-template-version \
-        --ami-id ${{env.LATEST_AMI_ID}} \
-        --launch-template-id ${{env.LAUNCH_TEMPLATE_ID}} \
-        --source-version ${{env.SOURCE_VERSION}}
+        --ami-id ${{env.ami_id}} \
+        --launch-template-id ${{env.template_id}} \
+        --source-version ${{env.template_version}}
         --launch-template-data '{"ImageId":"ami_id"}'
 
     - name: Get Autoscaling group name
       run: asg_name=($aws describe-auto-scaling-groups \
        --filters "Name=Name,Values=asg_group*" --output text")
-       echo "::set-env name=AUTOSCALING_NAME::$asg_name"
+       echo "asg_name" >>$GITHUB_ENV
 
 
     - name: Refresh Instance by Autoscaling group
       run: aws ec2 start-instance-refresh
-        --auto-scaling-group-name ${{env.AUTOSCALING_NAME}}
+        --auto-scaling-group-name ${{env.asg_name}}
