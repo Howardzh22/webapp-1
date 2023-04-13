@@ -72,7 +72,6 @@ jobs:
     - name: Create a new Launch Template version with the latest AMI ID for the autoscaling group
       run: |
         aws ec2 create-launch-template-version \
-        --ami-id ${{env.IMAGE_ID}} \
         --launch-template-id ${{env.LAUNCH_TEMPLATE_ID}} \
         --source-version ${{env.Version_Number}} \
         --launch-template-data '{"ImageId":"ami_id"}'
