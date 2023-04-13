@@ -32,8 +32,8 @@ jobs:
     - name: Initialize Packer Template
       run: cd packer && packer init .
 
-    ##- name: Build AMI
-    ##  run: cd packer && packer build ami.pkr.hcl
+    - name: Build AMI
+      run: cd packer && packer build ami.pkr.hcl
 
     - name: Install aws cli
       uses: unfor19/install-aws-cli-action@v1
