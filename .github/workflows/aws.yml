@@ -62,9 +62,10 @@ jobs:
 
     - name: Get Template version
       run: |
-       template_version=$(aws ec2 describe-launch-template-versions \
-       --launch-template-id $LAUNCH_TEMPLATE_ID --output text)
+       template_version=$(aws ec2 describe-launch-templates \
+       --query "reverse(sort_by(LaunchTemplates,&LatestVersionNumber))[0].LatestVersionNumber" --output text)
        echo Version_Number=$template_version >> $GITHUB_ENV
+
 
 
     - name: Create a new Launch Template version with the latest AMI ID for the autoscaling group
