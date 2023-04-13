@@ -68,19 +68,23 @@ const authenticate = async (req,res,next)=>{
         var Apassword = credentials[1]
         const user = await getUserByName(username)
         if(!user)
-        logger.error("Unauthorized")
-            return res.status(404).json('user not found')
-        //if not valid
-        const match = await bcrypt.compare(Apassword,user[0].dataValues.account_password) ;
-        if(!match){
+        {
             logger.error("Unauthorized")
-            return res.status(401).json('Unauthorized')
-        
+            return res.status(404).json('user not found')
         }
         else
         {
-            res.status(200)
-            next()
+            const match = await bcrypt.compare(Apassword,user[0].dataValues.account_password) ;
+            if(!match)
+            {
+                logger.error("Unauthorized")
+                return res.status(401).json('Unauthorized')
+            }
+            else
+            {
+                res.status(200)
+                next()
+            }
         }
     }
 }
