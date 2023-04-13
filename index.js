@@ -57,12 +57,7 @@ const authenticate = async (req,res,next)=>{
 
 
     if(!req.get('Authorization')){
-        /*
-        var err= new Error('Not Authenticated')
-        
-        res.status(403).set('WWW-Authenticate','Basic')
-        next(err)
-        */
+
         logger.error("Forbidden")
         return res.status(403).json('Forbidden')
     }else {
@@ -72,16 +67,12 @@ const authenticate = async (req,res,next)=>{
         var username = credentials[0]
         var Apassword = credentials[1]
         const user = await getUserByName(username)
-        console.log(user[0].dataValues.account_password)
+        if(!user)
+        logger.error("Unauthorized")
+            return res.status(404).json('user not found')
         //if not valid
         const match = await bcrypt.compare(Apassword,user[0].dataValues.account_password) ;
         if(!match){
-            //var err  = new Error('Not Authenticated!')
-            //set status
-           /* 
-           res.status(401).set('WWW-Authenticate','Basic')
-            next(err) 
-            */
             logger.error("Unauthorized")
             return res.status(401).json('Unauthorized')
         
@@ -96,6 +87,7 @@ const authenticate = async (req,res,next)=>{
 
 //get user account information
 app.get("/v1/user/:id",authenticate, async (req,res) => {
+    statsd.increment('get user')
     const id = req.params.id
     var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
     .toString()
@@ -112,12 +104,12 @@ app.get("/v1/user/:id",authenticate, async (req,res) => {
         const user = await getUser(id)
         res.status(200).json(user)
         logger.info("get user")
-        statsd.increment('get user')
     }
 })
 
 //Update User's account information
 app.put("/v1/user/:id",authenticate, async (req,res) => {
+    statsd.increment('update user')
     const id = req.params.id
     const { First_Name,Last_Name,account_password,username} = req.body;
 
@@ -142,7 +134,6 @@ app.put("/v1/user/:id",authenticate, async (req,res) => {
         else{
             res.status(200).json(account)
             logger.info("update user")
-            statsd.increment('update user')
         }
     }
 
@@ -151,6 +142,7 @@ app.put("/v1/user/:id",authenticate, async (req,res) => {
 
 //Add a new product
 app.post("/v1/product",authenticate, async(req,res) =>{
+    statsd.increment('add product')
     const {name,description,sku,manufacturer,quantity} = req.body
     var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
     .toString()
@@ -172,12 +164,12 @@ app.post("/v1/product",authenticate, async(req,res) =>{
         const product = await addProduct(name,description,sku,manufacturer,quantity,gid[0].dataValues.id)
         res.status(201).json(product)
         logger.info("add a product")
-        statsd.increment('add product')
     }
 })
 
 //update a product by put
 app.put("/v1/product/:id",authenticate, async(req,res) =>{
+    statsd.increment('update product1')
     const id = req.params.id
     const {name,description,sku,manufacturer,quantity} = req.body
     const exist = await getProduct(id)
@@ -207,13 +199,13 @@ app.put("/v1/product/:id",authenticate, async(req,res) =>{
         const product = await updateProduct(id,name,description,sku,manufacturer,quantity)
         res.status(201).json(product)
         logger.info("update a product")
-        statsd.increment('update product1')
     }
 })
 
 
 //update a product by patch
 app.patch("/v1/product/:id",authenticate, async(req,res) =>{
+    statsd.increment('update product2')
     const id = req.params.id
     const {name,description,sku,manufacturer,quantity} = req.body
     const exist = await getProduct(id)
@@ -239,12 +231,12 @@ app.patch("/v1/product/:id",authenticate, async(req,res) =>{
         const product = await updateProduct(id,name,description,sku,manufacturer,quantity)
         res.status(201).json(product)
         logger.info("update product")
-        statsd.increment('update product2')
     }
 })
 
 //Delete Product
 app.delete("/v1/product/:id", authenticate, async(req,res) =>{
+    statsd.increment('delete product')
     const id = req.params.id
     const exist = await getProduct(id)
     var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
@@ -268,7 +260,6 @@ app.delete("/v1/product/:id", authenticate, async(req,res) =>{
         deleteProduct(id)
         res.status(201).json("delete successfully")
         logger.info("delete successfully")
-        statsd.increment('delete product')
     }
 } )
 
