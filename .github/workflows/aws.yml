@@ -23,15 +23,57 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
-    - name: zip webapp
+    - name: Zip webapp
       run: cd .. && zip -r webapp.zip webapp && cd webapp
 
-    - name : setup env
+    - name : Setup env
       run : echo "DIALECT=mysql4.0.0" >> ./.env
 
     - name: Initialize Packer Template
       run: cd packer && packer init .
 
-    - name: build AMI
-      run: cd packer && packer build ami.pkr.hcl
+    #- name: Build AMI
+    # run: cd packer && packer build ami.pkr.hcl
+    
+    - name: Install aws cli
+      uses: unfor19/install-aws-cli-action@v1
+      with:
+        version: 2
 
+    - name: Setup demo credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{secrets.DEMO_AWS_ACCESS_KEY_ID}}
+        aws-secret-access-key: ${{secrets.DEMO_AWS_SECRET_ACCESS_KEY}}
+        aws-region: us-east-1
+
+    - name: Get Latest image id
+      run: echo "ami_id=$aws ec2 describe-images \
+       --owners ec2 \
+       --filters "Name=AMI name,Values=csye6225*" \
+       --query "reverse(sort_by(Images, &CreationDate))[0].ImageId" >> $GITHUB_ENV "
+
+    - name: Get Template version
+      run: echo "template-version=$aws ec2 describe-launch-template-versions \
+       --query "reverse(sort_by(CreateTime))[0].VersionNumber" >> $GITHUB_ENV"
+    
+    - name: Get Template id
+      run: echo "template-id=$aws ec2 describe-launch-template \
+       --query "reverse(sort_by(CreateTime))[0].LaunchTemplateId" >> $GITHUB_ENV "
+    
+
+    - name: Create a new Launch Template version with the latest AMI ID for the autoscaling group
+      run: aws ec2 create-launch-template-version \
+        --ami-id ${{env.ami_id}} \
+        --launch-template-id ${{env.template-id}} \
+        --source-version ${{env.template-version}}
+        --launch-template-data '{"ImageId":"ami-id"}'
+
+    - name: Get Autoscaling group name
+      run: echo "asg_name=$aws describe-auto-scaling-groups \
+       --filters "Name=Name,Values=asg_group*" >> $GITHUB_ENV
+
+    - name: Refresh Instance by Autoscaling group
+      run: aws ec2 start-instance-refresh
+        --auto-scaling-group-name ${{"asg_name}}
+        
