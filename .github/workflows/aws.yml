@@ -49,11 +49,12 @@ jobs:
 
     - name: Get Latest image id
       run: |
-       ami_id=($aws ec2 describe-images \
+       ami_id=$(aws ec2 describe-images \
        --owners ec2 \
        --filters "Name=Name,Values=csye6225-*" \
-       --query "reverse(sort_by(Images,&CreationDate))[0].ImageId --output text" )
-       echo "ami_id" >>$GITHUB_ENV
+       --query "reverse(sort_by(Images,&CreationDate))[0].ImageId" --output text )
+       echo $ami_id >> $GITHUB_ENV
+
 
     - name: Get Template version
       run: |
