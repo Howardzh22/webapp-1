@@ -50,38 +50,41 @@ jobs:
     - name: Get Latest image id
       run: |
        ami_id=$(aws ec2 describe-images \
-       --query "reverse(sort_by(Images,&CreationDate))[0].ImageId" --output text)
+       --owners "539751877006" \
+       --query 'reverse(sort_by(Images,&CreationDate))[0].ImageId' --output text)
        echo IMAGE_ID=$ami_id >> $GITHUB_ENV
 
 
     - name: Get Template version
       run: |
        template_version=($aws ec2 describe-launch-template-versions \
-       --query "reverse(sort_by(CreateTime))[0].VersionNumber" --output text)
+       --query 'reverse(sort_by(CreateTime))[0].VersionNumber' --output text)
        echo Version_Number=$template_version >> $GITHUB_ENV
 
 
     - name: Get Template id
       run: |
        template_id=($aws ec2 describe-launch-template \
-       --query "reverse(sort_by(CreateTime))[0].LaunchTemplateId --output text)
+       --query 'reverse(sort_by(CreateTime))[0].LaunchTemplateId' --output text)
        echo LAUNCH_TEMPLATE_ID=$template_id >> $GITHUB_ENV
 
 
     - name: Create a new Launch Template version with the latest AMI ID for the autoscaling group
-      run: aws ec2 create-launch-template-version \
+      run: |
+        aws ec2 create-launch-template-version \
         --ami-id ${{env.IMAGE_ID}} \
         --launch-template-id ${{env.LAUNCH_TEMPLATE_ID}} \
-        --source-version ${{env.Version_Number}}
+        --source-version ${{env.Version_Number}} \
         --launch-template-data '{"ImageId":"ami_id"}'
 
     - name: Get Autoscaling group name
       run: |
        asg_name=($aws describe-auto-scaling-groups \
-       --filters "Name=Name,Values=asg_group*" --output text)
+       --filters 'Name=Name,Values=asg_group*' --output text)
        echo AUTOSCALING_NAME=$asg_name >> $GITHUB_ENV
 
 
     - name: Refresh Instance by Autoscaling group
-      run: aws ec2 start-instance-refresh
+      run: |
+       aws ec2 start-instance-refresh
         --auto-scaling-group-name ${{env.AUTOSCALING_NAME}}
