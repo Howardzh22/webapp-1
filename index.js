@@ -90,7 +90,7 @@ const authenticate = async (req,res,next)=>{
 }
 
 //get user account information
-app.get("/v1/user/:id",authenticate, async (req,res) => {
+app.get("/v2/user/:id",authenticate, async (req,res) => {
     statsd.increment('get user')
     const id = req.params.id
     var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
@@ -112,7 +112,7 @@ app.get("/v1/user/:id",authenticate, async (req,res) => {
 })
 
 //Update User's account information
-app.put("/v1/user/:id",authenticate, async (req,res) => {
+app.put("/v2/user/:id",authenticate, async (req,res) => {
     statsd.increment('update user')
     const id = req.params.id
     const { First_Name,Last_Name,account_password,username} = req.body;
@@ -145,7 +145,7 @@ app.put("/v1/user/:id",authenticate, async (req,res) => {
 })
 
 //Add a new product
-app.post("/v1/product",authenticate, async(req,res) =>{
+app.post("/v2/product",authenticate, async(req,res) =>{
     statsd.increment('add product')
     const {name,description,sku,manufacturer,quantity} = req.body
     var credentials = Buffer.from(req.get('Authorization').split(' ')[1],'base64')
@@ -172,7 +172,7 @@ app.post("/v1/product",authenticate, async(req,res) =>{
 })
 
 //update a product by put
-app.put("/v1/product/:id",authenticate, async(req,res) =>{
+app.put("/v2/product/:id",authenticate, async(req,res) =>{
     statsd.increment('update product1')
     const id = req.params.id
     const {name,description,sku,manufacturer,quantity} = req.body
@@ -208,7 +208,7 @@ app.put("/v1/product/:id",authenticate, async(req,res) =>{
 
 
 //update a product by patch
-app.patch("/v1/product/:id",authenticate, async(req,res) =>{
+app.patch("/v2/product/:id",authenticate, async(req,res) =>{
     statsd.increment('update product2')
     const id = req.params.id
     const {name,description,sku,manufacturer,quantity} = req.body
@@ -239,7 +239,7 @@ app.patch("/v1/product/:id",authenticate, async(req,res) =>{
 })
 
 //Delete Product
-app.delete("/v1/product/:id", authenticate, async(req,res) =>{
+app.delete("/v2/product/:id", authenticate, async(req,res) =>{
     statsd.increment('delete product')
     const id = req.params.id
     const exist = await getProduct(id)
@@ -279,7 +279,7 @@ app.get("/healthz",async(req,res) =>{
 })
 
 //create  user account
-app.post("/v1/user", async(req,res) => {
+app.post("/v2/user", async(req,res) => {
     statsd.increment('create user')
     const{ username,account_password,First_Name,Last_Name } =req.body
 
@@ -306,7 +306,7 @@ app.post("/v1/user", async(req,res) => {
 })
 
 //Get Product Information
-app.get("/v1/product/:id", async(req,res) =>{
+app.get("/v2/product/:id", async(req,res) =>{
     statsd.increment('get product')
     const id = req.params.id
     const product = await getProduct(id)
@@ -319,7 +319,7 @@ export const server = app.listen(8080,() => {
 })
 
 //Get Image Information
-app.get('/v1/product/:id/image/:image_id',authenticate , async (req, res) => {
+app.get('/v2/product/:id/image/:image_id',authenticate , async (req, res) => {
     statsd.increment('get image')
     const imageid = req.params.image_id
     const id = req.params.id
@@ -348,7 +348,7 @@ app.get('/v1/product/:id/image/:image_id',authenticate , async (req, res) => {
 })
 
 //Get All Image Information
-app.get('/v1/product/:id/image',authenticate , async (req, res) => {
+app.get('/v2/product/:id/image',authenticate , async (req, res) => {
     statsd.increment('get all image')
     const id = req.params.id
     const exist = await getProduct(id)
@@ -376,7 +376,7 @@ app.get('/v1/product/:id/image',authenticate , async (req, res) => {
 })
 
 //Upload an Image
-app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (req, res) => {
+app.post('/v2/product/:id/image',authenticate, upload.single('image'), async (req, res) => {
     statsd.increment('upload image')
     const imageName = randomImageName()
     const id = req.params.id
@@ -426,7 +426,7 @@ app.post('/v1/product/:id/image',authenticate, upload.single('image'), async (re
   })
   
   //Delete an Image
-  app.delete('/v1/product/:id/image/:image_id',authenticate, async (req,res) => {
+  app.delete('/v2/product/:id/image/:image_id',authenticate, async (req,res) => {
     statsd.increment('delete image')
     const id = req.params.id
     const imageid = req.params.image_id
